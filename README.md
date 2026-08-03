@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Backend Architecture
 
-The app now includes a TypeScript backend layer under `src/backend` with:
+The app now includes a TypeScript backend layer under `src/server` with:
 
 - Supabase as the primary database client
 - A secondary Supabase client for failover
