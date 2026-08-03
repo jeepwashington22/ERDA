@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-import { getBrowserSupabaseClient } from "@/src/frontend/lib/supabase";
-import { getAuthRoleLabel, normalizeAuthRole, type AuthRole } from "@/src/frontend/types/auth";
+import { getBrowserSupabaseClient } from "@/lib/supabase";
+import { getAuthRoleLabel, normalizeAuthRole, type AuthRole } from "@/types/auth";
 
 type AuthMode = "login" | "authenticated";
 

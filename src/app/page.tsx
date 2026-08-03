@@ -1,4 +1,4 @@
-import { AuthPortal } from "@/src/frontend/components/auth-portal";
+import { AuthPortal } from "@/components/auth-portal";
 
 export default function Home() {
   return <AuthPortal />;
