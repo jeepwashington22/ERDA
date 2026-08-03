@@ -1,5 +1,35 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Backend Architecture
+
+The app now includes a TypeScript backend layer under `src/backend` with:
+
+- Supabase as the primary database client
+- A secondary Supabase client for failover
+- Redis for cache-aside reads, stampede protection, and lock coordination
+
+Architecture status is exposed at `/api/backend/architecture`.
+
+Environment variables:
+
+- `REDIS_URL`
+- `REDIS_KEY_PREFIX`
+- `REDIS_DEFAULT_TTL_SECONDS`
+- `REDIS_STALE_WHILE_REVALIDATE_SECONDS`
+- `REDIS_LOCK_TTL_MS`
+- `REDIS_BREAKER_FAILURE_THRESHOLD`
+- `REDIS_BREAKER_COOLDOWN_MS`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_BACKUP_URL`
+- `SUPABASE_BACKUP_SERVICE_ROLE_KEY`
+
+Recommended Redis settings:
+
+- `maxmemory-policy allkeys-lru`
+- TTL-based cache writes for every cached record
+- offline queue disabled in the Redis client
+
 ## Getting Started
 
 First, run the development server:
