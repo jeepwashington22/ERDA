@@ -1,3 +1,4 @@
+import { backendConfig } from "../lib/backend-config";
 import { queryPostgres } from "../lib/postgres";
 
 export type DashboardRecentSubmission = {
@@ -20,6 +21,7 @@ export type DashboardSummary = {
     isActive: boolean;
   } | null;
   recentSubmissions: DashboardRecentSubmission[];
+  databaseUnavailable: boolean;
 };
 
 type CountRow = {
@@ -44,6 +46,16 @@ type RecentSubmissionRow = {
 };
 
 export async function getDashboardSummary(userId: string): Promise<DashboardSummary> {
+  if (!backendConfig.supabasePoolUrl) {
+    return {
+      totalStudents: 0,
+      totalGradeSubmissions: 0,
+      currentUserProfile: null,
+      recentSubmissions: [],
+      databaseUnavailable: true,
+    };
+  }
+
   const [studentRows, gradeRows, profileRows, recentRows] = await Promise.all([
     queryPostgres<CountRow>("select count(*)::text as count from students"),
     queryPostgres<CountRow>("select count(*)::text as count from academic_performance"),
@@ -90,5 +102,6 @@ export async function getDashboardSummary(userId: string): Promise<DashboardSumm
       mathGrade1stPeriod: row.math_grade_1st_period,
       createdAt: row.created_at,
     })),
+    databaseUnavailable: false,
   };
 }

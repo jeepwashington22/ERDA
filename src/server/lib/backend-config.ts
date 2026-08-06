@@ -23,6 +23,19 @@ function parseNumber(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function parseConnectionString(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    new URL(value);
+    return value;
+  } catch {
+    return "";
+  }
+}
+
 export function parseBoolean(value: string | undefined, fallback = false): boolean {
   if (value === undefined || value === "") {
     return fallback;
@@ -39,7 +52,7 @@ export const backendConfig: BackendConfig = {
   redisLockTtlMs: parseNumber(process.env.REDIS_LOCK_TTL_MS, 10000),
   redisBreakerFailureThreshold: parseNumber(process.env.REDIS_BREAKER_FAILURE_THRESHOLD, 5),
   redisBreakerCooldownMs: parseNumber(process.env.REDIS_BREAKER_COOLDOWN_MS, 30000),
-  supabasePoolUrl: process.env.SUPABASE_POOL_URL ?? "",
+  supabasePoolUrl: parseConnectionString(process.env.SUPABASE_POOL_URL),
   supabasePrimaryUrl: process.env.SUPABASE_URL ?? "",
   supabasePrimaryServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   supabaseBackupUrl: process.env.SUPABASE_BACKUP_URL ?? "",

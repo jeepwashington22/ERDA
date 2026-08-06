@@ -10,7 +10,7 @@ export const metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: { next?: string | string[] };
+  searchParams?: Promise<{ next?: string | string[] }>;
 }) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getUser();
@@ -19,7 +19,7 @@ export default async function LoginPage({
     redirect("/dashboard");
   }
 
-  const resolvedSearchParams = searchParams ?? {};
+  const resolvedSearchParams = (await searchParams) ?? {};
   const nextValue = Array.isArray(resolvedSearchParams.next)
     ? resolvedSearchParams.next[0]
     : resolvedSearchParams.next;
