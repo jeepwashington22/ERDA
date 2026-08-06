@@ -1,9 +1,9 @@
-export const authRoles = ["superadmin", "admin", "staff"] as const;
+export const authRoles = ["super_admin", "admin", "staff"] as const;
 
 export type AuthRole = (typeof authRoles)[number];
 
 const roleLabels: Record<AuthRole, string> = {
-  superadmin: "Superadmin",
+  super_admin: "Super Admin",
   admin: "Admin",
   staff: "Staff",
 };

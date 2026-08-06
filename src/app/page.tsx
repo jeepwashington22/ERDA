@@ -1,5 +1,5 @@
-import { AuthPortal } from "@/components/auth-portal";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <AuthPortal />;
+  redirect("/dashboard");
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
 import { getBrowserSupabaseClient } from "@/lib/supabase";
@@ -13,13 +14,17 @@ type AuthFormState = {
   password: string;
 };
 
+type AuthPortalProps = {
+  redirectTo?: string;
+};
+
 const defaultFormState: AuthFormState = {
   email: "",
   password: "",
 };
 
 const roleCopy: Record<AuthRole, { headline: string; body: string; accent: string }> = {
-  superadmin: {
+  super_admin: {
     headline: "Platform control center",
     body: "Manage institutional access, policy changes, and high-trust operations from a single console.",
     accent: "From system oversight to emergency access, keep the platform aligned.",
@@ -42,7 +47,8 @@ function getSessionRole(session: Session | null): AuthRole {
   return normalizeAuthRole(typeof metadataRole === "string" ? metadataRole : null);
 }
 
-export function AuthPortal() {
+export function AuthPortal({ redirectTo = "/dashboard" }: AuthPortalProps) {
+  const router = useRouter();
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const [mode, setMode] = useState<AuthMode>("login");
   const [session, setSession] = useState<Session | null>(null);
@@ -112,6 +118,9 @@ export function AuthPortal() {
     setMode(data.session ? "authenticated" : "login");
     setForm(defaultFormState);
     setSubmitting(false);
+    if (data.session) {
+      router.replace(redirectTo);
+    }
   }
 
   async function handleLogout() {
@@ -150,7 +159,7 @@ export function AuthPortal() {
               <div className="space-y-4">
                 <p className="text-sm font-medium uppercase tracking-[0.3em] text-slate-400">Supabase auth</p>
                 <h1 className="max-w-xl text-4xl font-semibold leading-tight text-white sm:text-5xl">
-                  Secure login with role-aware access for superadmin, admin, and staff.
+                  Secure login with role-aware access for super admin, admin, and staff.
                 </h1>
                 <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
                   This portal connects your Supabase-backed environment variables, signs users in against the
@@ -160,7 +169,7 @@ export function AuthPortal() {
             </div>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {(["superadmin", "admin", "staff"] as AuthRole[]).map((item) => (
+              {(["super_admin", "admin", "staff"] as AuthRole[]).map((item) => (
                 <div
                   key={item}
                   className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 backdrop-blur-sm"
