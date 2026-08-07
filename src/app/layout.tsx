@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: "Supabase-backed login and role-aware scholarship management portal",
 };
 
-export default function RootLayout({
+export default function RootLayout({  
   children,
 }: Readonly<{
   children: React.ReactNode;

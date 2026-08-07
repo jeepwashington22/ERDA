@@ -28,7 +28,7 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-3">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-sm text-slate-500">Students</p>
           <p className="mt-2 text-3xl font-semibold text-slate-950">{summary.totalStudents}</p>
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-sm">
+      <div className="rounded-[2rem] border border-slate-200/80 bg-white p-10 mt-5 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-950">Recent grade submissions</h3>
         <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
           <table className="min-w-full divide-y divide-slate-200 text-sm">

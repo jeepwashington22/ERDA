@@ -148,60 +148,27 @@ export function AuthPortal({ redirectTo = "/dashboard" }: AuthPortalProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(15,23,42,0.14),_transparent_28%),linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] px-4 py-8 text-slate-900 sm:px-6 lg:px-10">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-stretch gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-slate-950 text-white shadow-[0_30px_120px_rgba(15,23,42,0.24)]">
-          <div className="flex h-full flex-col justify-between bg-[linear-gradient(145deg,rgba(15,23,42,0.98),rgba(30,41,59,0.92)_55%,rgba(8,47,73,0.94))] px-8 py-10 sm:px-12 sm:py-12">
-            <div className="max-w-2xl space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">
-                Erda Scholar System
-              </div>
-              <div className="space-y-4">
-                <p className="text-sm font-medium uppercase tracking-[0.3em] text-slate-400">Supabase auth</p>
-                <h1 className="max-w-xl text-4xl font-semibold leading-tight text-white sm:text-5xl">
-                  Secure login with role-aware access for super admin, admin, and staff.
-                </h1>
-                <p className="max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-                  This portal connects your Supabase-backed environment variables, signs users in against the
-                  database auth system, and resolves the active role from user metadata.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {(["super_admin", "admin", "staff"] as AuthRole[]).map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 backdrop-blur-sm"
-                >
-                  <p className="text-sm font-semibold text-white">{getAuthRoleLabel(item)}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{roleCopy[item].accent}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="flex flex-col justify-center rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur sm:p-8">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 px-4 py-8 text-slate-900 sm:px-6">
+      <div className="mx-auto max-w-md">
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm">
           {mode === "authenticated" && session ? (
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800">
                 Signed in as {getAuthRoleLabel(role)}
               </div>
               <div className="space-y-3">
-                <h2 className="text-3xl font-semibold text-slate-950">{roleMeta.headline}</h2>
-                <p className="max-w-xl text-base leading-7 text-slate-600">{roleMeta.body}</p>
+                <h2 className="text-2xl font-semibold text-slate-950">{roleMeta.headline}</h2>
+                <p className="text-base leading-6 text-slate-600">{roleMeta.body}</p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
                 <p className="font-medium text-slate-900">Session</p>
                 <p className="mt-2 break-all">{session.user.email}</p>
-                <p className="mt-1">Role source: user metadata or app metadata.</p>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
                 disabled={submitting}
-                className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center rounded-lg bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Signing out..." : "Sign out"}
               </button>
@@ -209,11 +176,12 @@ export function AuthPortal({ redirectTo = "/dashboard" }: AuthPortalProps) {
           ) : (
             <form className="space-y-6" onSubmit={handleLogin}>
               <div className="space-y-2">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Login</p>
-                <h2 className="text-3xl font-semibold text-slate-950">Welcome back</h2>
-                <p className="max-w-lg text-base leading-7 text-slate-600">
-                  Sign in with your Supabase auth account. The dashboard will adapt to the assigned role.
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#635BFF] text-xs font-bold text-white">ES</span>
+                  <span className="text-sm font-bold tracking-tight text-slate-900">ERDA Scholar</span>
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold text-slate-950">Welcome back</h2>
+                <p className="text-sm text-slate-500">Sign in to your account to continue</p>
               </div>
 
               <div className="space-y-4">
@@ -225,7 +193,7 @@ export function AuthPortal({ redirectTo = "/dashboard" }: AuthPortalProps) {
                     type="email"
                     autoComplete="email"
                     placeholder="name@school.edu"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
                     required
                   />
                 </label>
@@ -238,30 +206,27 @@ export function AuthPortal({ redirectTo = "/dashboard" }: AuthPortalProps) {
                     type="password"
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-cyan-500 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
                     required
                   />
                 </label>
               </div>
 
               {error ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-800">
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                   {error}
                 </div>
               ) : null}
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {submitting ? "Signing in..." : "Sign in"}
-                </button>
-                <div className="rounded-full border border-slate-200 px-4 py-3 text-sm text-slate-500">
-                  Role-aware session routing after auth
-                </div>
-              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full inline-flex items-center justify-center rounded-lg bg-[#635BFF] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#5148e5] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? "Signing in..." : "Sign in"}
+              </button>
+
+              <p className="text-center text-xs text-slate-400">By continuing, you agree to the system access policy.</p>
             </form>
           )}
         </section>
