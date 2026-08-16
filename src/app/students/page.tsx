@@ -2,13 +2,20 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getStudentRegistryRows } from "@/server/services/student-registry";
+import {
+  getStudentFilterOptions,
+  getStudentRegistryRows,
+} from "@/server/services/student-registry";
+import { StudentFilters } from "./StudentFilters";
 
 export const metadata = {
   title: "Students | Erda Scholar System",
 };
 
-type Student = Awaited<ReturnType<typeof getStudentRegistryRows>>[number];
+type Student = Awaited<ReturnType<typeof getStudentRegistryRows>>["students"][number];
+
+// TODO: replace with your actual Google Form URL once it's set up.
+const GOOGLE_FORM_URL = "https://forms.google.com/your-form-id-here";
 
 function StatusBadge({ status }: { status: string | null | undefined }) {
   const value = status ?? "Unknown";
@@ -46,7 +53,17 @@ function TableCell({ children, className = "" }: { children: React.ReactNode; cl
   return <td className={`whitespace-nowrap px-8 py-4 align-middle text-sm text-slate-600 ${className}`}>{children}</td>;
 }
 
-export default async function StudentsPage() {
+type PageProps = {
+  searchParams: Promise<{
+    search?: string;
+    grade?: string;
+    year?: string;
+    status?: string;
+    page?: string;
+  }>;
+};
+
+export default async function StudentsPage({ searchParams }: PageProps) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.auth.getUser();
 
@@ -54,38 +71,65 @@ export default async function StudentsPage() {
     redirect("/login");
   }
 
-  const students = await getStudentRegistryRows(250);
+  const params = await searchParams;
+  const search = params.search ?? "";
+  const gradeLevel = params.grade ?? "";
+  const schoolYear = params.year ?? "";
+  const status = params.status ?? "";
+  const currentPage = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const pageSize = 25;
-  const currentPage = 1;
+
+  const [{ students, totalCount, totalPages }, filterOptions] = await Promise.all([
+    getStudentRegistryRows({ search, gradeLevel, schoolYear, status, page: currentPage, pageSize }),
+    getStudentFilterOptions(),
+  ]);
+
   const visibleStart = students.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const visibleEnd = Math.min(currentPage * pageSize, students.length);
-  const totalPages = Math.max(1, Math.ceil(students.length / pageSize));
+  const visibleEnd = Math.min(currentPage * pageSize, totalCount);
+
+  // Preserves the current filters/search when changing page or clicking
+  // through — builds "?search=x&grade=y&page=2" style links.
+  function buildPageHref(targetPage: number) {
+    const qs = new URLSearchParams();
+    if (search) qs.set("search", search);
+    if (gradeLevel) qs.set("grade", gradeLevel);
+    if (schoolYear) qs.set("year", schoolYear);
+    if (status) qs.set("status", status);
+    qs.set("page", String(targetPage));
+    return `/students?${qs.toString()}`;
+  }
 
   return (
     <AppShell title="Students" description="Manage and review the student registry.">
       <div className="w-full h-full bg-white flex flex-col rounded-none">
         <div className="border-b border-slate-100 px-8 py-5 flex items-center justify-between shrink-0">
           <h2 className="text-base font-semibold text-slate-950">Student Directory</h2>
-          <p className="text-sm text-slate-500">{students.length} records</p>
+          <p className="text-sm text-slate-500">{totalCount} records</p>
         </div>
 
+        {/* Filters + search update the URL live (debounced for the search
+            box), handled client-side in StudentFilters. Each URL change
+            re-runs this server component's data fetch automatically. */}
         <div className="border-b border-slate-100 px-8 py-5 shrink-0">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-            <label className="relative block min-w-0 flex-1 lg:max-w-sm">
-              <span className="sr-only">Search students</span>
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">⌕</span>
-              <input className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" placeholder="Search by name or child code" />
-            </label>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-              <option>All grades</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-              <option>All school years</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
-              <option>All statuses</option>
-            </select>
-            <button className="h-9 rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white transition hover:bg-indigo-700">Add student</button>
+            <div className="flex-1">
+              <StudentFilters
+                gradeLevels={filterOptions.gradeLevels}
+                schoolYears={filterOptions.schoolYears}
+                statuses={filterOptions.statuses}
+              />
+            </div>
+
+            {/* Add student -> redirects to the Google Form. No submit
+                handler yet, just a plain link, per current scope. */}
+            <a
+              href={GOOGLE_FORM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-9 flex items-center rounded-lg bg-indigo-600 px-3 text-xs font-semibold text-white transition hover:bg-indigo-700"
+            >
+              Add student
+            </a>
           </div>
         </div>
 
@@ -105,7 +149,7 @@ export default async function StudentsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {students.length === 0 ? (
-                <tr><td className="px-5 py-12 text-center text-sm text-slate-500" colSpan={8}>No student records found yet.</td></tr>
+                <tr><td className="px-5 py-12 text-center text-sm text-slate-500" colSpan={8}>No student records match your filters.</td></tr>
               ) : (
                 students.map((student) => (
                   <tr key={student.id} className="group transition hover:bg-slate-50/80">
@@ -132,12 +176,20 @@ export default async function StudentsPage() {
         <div className="border-t border-slate-100 px-8 py-5 shrink-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm">
             <div>
-              <span className="text-slate-600">Showing <strong className="text-slate-800">{visibleStart}–{visibleEnd}</strong> of <strong className="text-slate-800">{students.length}</strong> entries</span>
+              <span className="text-slate-600">Showing <strong className="text-slate-800">{visibleStart}–{visibleEnd}</strong> of <strong className="text-slate-800">{totalCount}</strong> entries</span>
             </div>
             <div className="flex items-center gap-2">
-              <button className="rounded-lg border border-slate-200 px-4 py-2 text-slate-400" disabled>Prev</button>
-              <button className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 font-semibold text-indigo-700">{currentPage}</button>
-              <button className="rounded-lg border border-slate-200 px-4 py-2 text-slate-500 transition hover:bg-slate-50">Next</button>
+              {currentPage > 1 ? (
+                <a href={buildPageHref(currentPage - 1)} className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 transition hover:bg-slate-50">Prev</a>
+              ) : (
+                <button className="rounded-lg border border-slate-200 px-4 py-2 text-slate-400" disabled>Prev</button>
+              )}
+              <span className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 font-semibold text-indigo-700">{currentPage} / {totalPages}</span>
+              {currentPage < totalPages ? (
+                <a href={buildPageHref(currentPage + 1)} className="rounded-lg border border-slate-200 px-4 py-2 text-slate-500 transition hover:bg-slate-50">Next</a>
+              ) : (
+                <button className="rounded-lg border border-slate-200 px-4 py-2 text-slate-400" disabled>Next</button>
+              )}
             </div>
           </div>
         </div>
@@ -145,4 +197,3 @@ export default async function StudentsPage() {
     </AppShell>
   );
 }
-
