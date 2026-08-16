@@ -6,3 +6,4 @@ export * from "./lib/supabase";
 export * from "./services/dashboard-summary";
 export * from "./services/backend-architecture";
 export * from "./services/failover-repository";
+export * from "./actions/create-user-account";

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getUserAccounts } from "@/server/services/user-accounts";
 
 import { AccountsWorkspace } from "./accounts-workspace";
 
@@ -17,26 +18,23 @@ export default async function AccountsPage() {
     redirect("/login");
   }
 
-  const name = data.user.user_metadata?.full_name ?? data.user.email?.split("@")[0] ?? "Current user";
-  const role = data.user.user_metadata?.role ?? "admin";
+  // Server-verified role — never trust client metadata for anything
+  // authorization-related, only use it here for display purposes.
+  const { data: callerProfile } = await supabase
+    .from("user_profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single();
+
+  const canCreateAccounts = ["admin", "super_admin"].includes(callerProfile?.role ?? "");
+  const accounts = await getUserAccounts();
 
   return (
     <AppShell
       title="Account management"
       description="Create and manage user access for staff, admins, and super admins."
     >
-      <AccountsWorkspace
-        accounts={[
-          {
-            id: data.user.id,
-            name,
-            email: data.user.email ?? "No email available",
-            role,
-            status: "Active",
-            joined: "Current account",
-          },
-        ]}
-      />
+      <AccountsWorkspace accounts={accounts} canCreateAccounts={canCreateAccounts} />
     </AppShell>
   );
 }
