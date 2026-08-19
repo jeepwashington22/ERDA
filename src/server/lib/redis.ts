@@ -176,3 +176,6 @@ export class RedisCacheService {
     return loadedValue;
   }
 }
+
+// Export a default Redis cache instance configured with backend settings
+export const redisCache = new RedisCacheService(createRedisClient());
