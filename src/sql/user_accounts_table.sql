@@ -31,3 +31,7 @@ $$ language plpgsql security definer set search_path = public;
 create trigger trg_handle_new_auth_user
 after insert on auth.users
 for each row execute function handle_new_auth_user();
+
+-- Optional: if this should be your super_admin account, promote it now:
+update user_profiles set role = 'super_admin'
+where email = 'jeffreybonina05@gmail.com';
