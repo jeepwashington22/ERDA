@@ -25,6 +25,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createPrimarySupabaseClient } from "@/server/lib/supabase";
+import { queryPostgres } from "@/server/lib/postgres";
 
 export type CreateUserAccountInput = {
   fullName: string;
@@ -51,13 +52,21 @@ export async function createUserAccount(
   }
 
   // Re-check the role from the DATABASE, not from client-supplied metadata.
-  const { data: callerProfile, error: profileError } = await supabase
-    .from("user_profiles")
-    .select("role, is_active")
-    .eq("id", sessionData.user.id)
-    .single();
+  // Uses the server-side Postgres pool so RLS on user_profiles cannot hide
+  // the caller's own row.
+  let callerProfile: { role: string; is_active: boolean } | null = null;
+  try {
+    const rows = await queryPostgres<{ role: string; is_active: boolean }>(
+      "select role, is_active from user_profiles where id = $1 limit 1",
+      [sessionData.user.id],
+    );
+    callerProfile = rows[0] ?? null;
+  } catch (err) {
+    console.error("Failed to verify caller profile:", err);
+    callerProfile = null;
+  }
 
-  if (profileError || !callerProfile) {
+  if (!callerProfile) {
     return { success: false, error: "Could not verify your account." };
   }
 

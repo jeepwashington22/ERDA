@@ -7,7 +7,7 @@ import { getBrowserSupabaseClient } from "@/lib/supabase";
 type LogoutButtonProps = {
   className?: string;
 };
-
+  
 export function LogoutButton({ className = "" }: LogoutButtonProps) {
   const router = useRouter();
 

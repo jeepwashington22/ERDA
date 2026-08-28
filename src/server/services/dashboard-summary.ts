@@ -1,5 +1,6 @@
 import { backendConfig } from "../lib/backend-config";
 import { queryPostgres } from "../lib/postgres";
+import { redisCache } from "../lib/redis";
 
 export type DashboardRecentSubmission = {
   enrollmentRecordId: string;
@@ -32,11 +33,6 @@ export type ProvinceCoverage = {
   coveragePercent: number;
 };
 
-export type DashboardFilters = {
-  provinceId?: string;
-  schoolYear?: string;
-};
-
 export type DashboardSummary = {
   totalStudents: number;
   totalGradeSubmissions: number;
@@ -56,7 +52,20 @@ export type DashboardSummary = {
 };
 
 type CountRow = { count: string };
-type ProfileRow = { full_name: string | null; role: string; is_active: boolean };
+type ProvinceCountRow = { province_id: string; province_name: string; student_count: string };
+type ProvinceYearRow = { province_name: string; school_year: string; student_count: string };
+type ProvinceCoverageRow = {
+  province_id: string;
+  province_name: string;
+  total_students: string;
+  students_with_submissions: string;
+  coverage_percent: string | null;
+};
+type ProfileRow = {
+  full_name: string | null;
+  role: string;
+  is_active: boolean;
+};
 type RecentSubmissionRow = {
   enrollment_record_id: string;
   school_year: string;
@@ -67,20 +76,12 @@ type RecentSubmissionRow = {
   math_grade_1st_period: string | null;
   created_at: string;
 };
-type ProvinceCountRow = { province_id: string; province_name: string; student_count: string };
-type ProvinceYearRow = { province_name: string; school_year: string; student_count: string };
-type ProvinceCoverageRow = {
-  province_id: string;
-  province_name: string;
-  total_students: string;
-  students_with_submissions: string;
-  coverage_percent: string | null;
-};
 
 export async function getDashboardSummary(
   userId: string,
-  filters: DashboardFilters = {},
+  filters: { provinceId?: string; schoolYear?: string } = {},
 ): Promise<DashboardSummary> {
+  // If database is not configured, return fallback (no caching needed)
   if (!backendConfig.supabasePoolUrl) {
     return {
       totalStudents: 0,
@@ -97,9 +98,18 @@ export async function getDashboardSummary(
     };
   }
 
+  // Create cache key based on userId and filters
   const provinceId = filters.provinceId ?? null;
   const schoolYear = filters.schoolYear ?? null;
+  const cacheKey = `dashboard-summary:${userId}:${provinceId ?? 'all'}:${schoolYear ?? 'all'}`;
 
+  // Try to get from cache first
+  const cached = await redisCache.get<DashboardSummary>(cacheKey);
+  if (cached !== null) {
+    return cached;
+  }
+
+  // Cache miss: fetch data from database
   const [
     studentRows,
     gradeRows,
@@ -131,8 +141,13 @@ export async function getDashboardSummary(
        join enrollment_records er on er.id = ap.enrollment_record_id
        join students s on s.id = er.student_id
        left join lookup_grade_levels gl on gl.id = er.grade_level_id
+       join lookup_cities lc on lc.id = s.city_id
+       join lookup_provinces lp on lp.id = lc.province_id
+       where ($1::uuid is null or lp.id = $1)
+         and ($2::text is null or er.school_year = $2)
        order by er.created_at desc
        limit 5`,
+    [provinceId, schoolYear],
     ),
     queryPostgres<ProvinceCountRow>(
       `select
@@ -191,10 +206,10 @@ export async function getDashboardSummary(
     ),
   ]);
 
-  return {
+  const result: DashboardSummary = {
     totalStudents: Number(studentRows[0]?.count ?? 0),
     totalGradeSubmissions: Number(gradeRows[0]?.count ?? 0),
-    totalProvincesCovered: provinceRows.filter((r) => Number(r.student_count) > 0).length,
+    totalProvincesCovered: coverageRows.filter((r) => Number(r.total_students) > 0).length,
     currentUserProfile: profileRows[0]
       ? {
           fullName: profileRows[0].full_name,
@@ -233,4 +248,9 @@ export async function getDashboardSummary(
     schoolYearOptions: schoolYearOptionRows.map((r) => r.school_year),
     databaseUnavailable: false,
   };
+
+  // Cache the result for 60 seconds (1 minute)
+  await redisCache.set(cacheKey, result, 60);
+
+  return result;
 }
