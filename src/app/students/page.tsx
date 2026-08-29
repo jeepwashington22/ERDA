@@ -19,6 +19,22 @@ function fmt(v: string | number | boolean | null | undefined) {
   return String(v);
 }
 
+function NoneBadge() {
+  return (
+    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+      None
+    </span>
+  );
+}
+
+function Cell({ value }: { value: string | number | boolean | null | undefined }) {
+  if (value === null || value === undefined || value === "") {
+    return <NoneBadge />;
+  }
+  if (typeof value === "boolean") return <>{value ? "Yes" : "No"}</>;
+  return <>{String(value)}</>;
+}
+
 // Column order/labels match the SY intake spreadsheet exactly.
 const COLUMNS: { label: string; key: keyof StudentFullRow }[] = [
   { label: "No.", key: "intakeNo" },
@@ -122,11 +138,12 @@ export default async function StudentsPage({
       userName={profile?.full_name ?? undefined}
       userEmail={data.user.email}
     >
-      <div className="w-full h-full bg-white flex flex-col rounded-none">
-        <div className="border-b border-slate-100 px-8 py-5 flex items-center justify-between shrink-0">
-  <h2 className="text-base font-semibold text-slate-950">Student Directory</h2>
-  <div className="flex items-center gap-4">
-    <p className="text-sm text-slate-500">{totalCount} records</p>
+      <div className="w-full h-full bg-slate-100 flex flex-col gap-4 p-4">
+        <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-emerald-100 bg-white px-5 py-3 flex items-center justify-between shrink-0">
+  <h2 className="text-sm font-semibold text-slate-950">Student Directory</h2>
+  <div className="flex items-center gap-3">
+    <p className="text-xs text-slate-500">{totalCount} records</p>
     <ExportStudentsButton
       gradeLevels={filterOptions.gradeLevels}
       schoolYears={filterOptions.schoolYears}
@@ -135,7 +152,7 @@ export default async function StudentsPage({
   </div>
 </div>
 
-        <div className="border-b border-slate-100 px-8 py-5 shrink-0">
+        <div className="border-b border-emerald-100 bg-white px-5 py-2.5 shrink-0">
           <StudentFilters
             gradeLevels={filterOptions.gradeLevels}
             schoolYears={filterOptions.schoolYears}
@@ -144,74 +161,91 @@ export default async function StudentsPage({
         </div>
         
 
-        <div className="flex-1 overflow-auto">
-          <table className="w-full border-collapse text-left" style={{ minWidth: 260 + COLUMNS.length * 170 }}>
-            <thead className="sticky top-0 z-20 bg-slate-50/95 text-xs font-semibold uppercase tracking-wide text-slate-500 backdrop-blur">
-              <tr className="border-b border-slate-200">
-                <th className="sticky left-0 z-30 bg-slate-50/95 px-6 py-4 min-w-[260px]">Student</th>
-                <th className="sticky left-[260px] z-30 bg-slate-50/95 px-6 py-4 min-w-[160px]">Child Code</th>
+        <div className="flex-1 overflow-auto bg-white">
+          <table
+            className="w-full border-collapse text-left text-xs"
+            style={{ minWidth: 200 + 90 + COLUMNS.length * 130 }}
+          >
+            <thead className="sticky top-0 z-20 bg-emerald-600 text-[11px] font-semibold uppercase tracking-wide text-emerald-50">
+              <tr>
+                <th className="sticky left-0 z-30 bg-emerald-600 px-4 py-2.5 min-w-[200px]">Student</th>
+                <th className="sticky left-[200px] z-30 bg-emerald-600 px-4 py-2.5 min-w-[130px]">Child Code</th>
+                <th className="sticky left-[330px] z-30 bg-emerald-600 px-4 py-2.5 min-w-[90px] text-center">Edit</th>
                 {COLUMNS.map((col) => (
-                  <th key={col.key} className="px-6 py-4 min-w-[170px]">{col.label}</th>
+                  <th key={col.key} className="px-4 py-2.5 min-w-[130px] whitespace-nowrap">{col.label}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-emerald-100/70">
               {students.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-12 text-center text-sm text-slate-500" colSpan={COLUMNS.length + 2}>
+                  <td className="px-5 py-10 text-center text-sm text-slate-500" colSpan={COLUMNS.length + 3}>
                     No student records match these filters.
                   </td>
                 </tr>
               ) : (
-                students.map((s) => (
-                  <tr key={s.id} className="group transition hover:bg-slate-50/80">
-                    <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50/80 px-6 py-4 min-w-[260px]">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold text-emerald-700">
-                          {(s.firstName?.[0] ?? "S")}{(s.surname?.[0] ?? "")}
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-slate-900">
+                students.map((s, i) => {
+                  const rowBg = i % 2 === 0 ? "bg-white" : "bg-emerald-50/40";
+                  return (
+                    <tr key={s.id} className={`group transition hover:bg-emerald-50/70 ${rowBg}`}>
+                      <td className={`sticky left-0 z-10 ${rowBg} px-4 py-2 min-w-[200px] group-hover:bg-emerald-50/70`}>
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-bold text-emerald-700">
+                            {(s.firstName?.[0] ?? "S")}{(s.surname?.[0] ?? "")}
+                          </div>
+                          <div className="text-[13px] font-semibold text-slate-900">
                             {[s.firstName, s.middleInitial, s.surname].filter(Boolean).join(" ") || "Unnamed"}
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="sticky left-[260px] z-10 bg-white group-hover:bg-slate-50/80 px-6 py-4 min-w-[160px] font-medium text-slate-700">
-                      {s.childCode}
-                    </td>
-                    {COLUMNS.map((col) => (
-                      <td key={col.key} className="px-6 py-4 min-w-[170px] whitespace-nowrap text-sm text-slate-600">
-                        {fmt(s[col.key] as any)}
                       </td>
-                    ))}
-                  </tr>
-                ))
+                      <td className={`sticky left-[200px] z-10 ${rowBg} px-4 py-2 min-w-[130px] font-medium text-slate-700 group-hover:bg-emerald-50/70`}>
+                        {s.childCode}
+                      </td>
+                      <td className={`sticky left-[330px] z-10 ${rowBg} px-4 py-2 min-w-[90px] text-center group-hover:bg-emerald-50/70`}>
+                        <Link
+                          href={`/students/${s.id}/edit`}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-emerald-600 transition hover:bg-emerald-100 hover:text-emerald-800"
+                          aria-label={`Edit ${[s.firstName, s.surname].filter(Boolean).join(" ") || "student"}`}
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1 1-4Z" />
+                          </svg>
+                        </Link>
+                      </td>
+                      {COLUMNS.map((col) => (
+                        <td key={col.key} className="px-4 py-2 min-w-[130px] whitespace-nowrap text-slate-600">
+                          <Cell value={s[col.key] as any} />
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        <div className="border-t border-slate-100 px-8 py-5 shrink-0">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm">
+        <div className="border-t border-emerald-100 bg-white px-5 py-2.5 shrink-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs">
             <span className="text-slate-600">
               Showing <strong className="text-slate-800">{visibleStart}–{visibleEnd}</strong> of{" "}
               <strong className="text-slate-800">{totalCount}</strong> entries
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {currentPage > 1 ? (
-                <Link href={pageHref(currentPage - 1)} className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 hover:bg-slate-50">Prev</Link>
+                <Link href={pageHref(currentPage - 1)} className="rounded-lg border border-emerald-200 px-3 py-1.5 text-slate-600 hover:bg-emerald-50">Prev</Link>
               ) : (
-                <button className="rounded-lg border border-slate-200 px-4 py-2 text-slate-400" disabled>Prev</button>
+                <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-400" disabled>Prev</button>
               )}
-              <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 font-semibold text-emerald-700">{currentPage} of {totalPages}</span>
+              <span className="rounded-lg bg-emerald-600 px-3 py-1.5 font-semibold text-white">{currentPage} of {totalPages}</span>
               {currentPage < totalPages ? (
-                <Link href={pageHref(currentPage + 1)} className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600 hover:bg-slate-50">Next</Link>
+                <Link href={pageHref(currentPage + 1)} className="rounded-lg border border-emerald-200 px-3 py-1.5 text-slate-600 hover:bg-emerald-50">Next</Link>
               ) : (
-                <button className="rounded-lg border border-slate-200 px-4 py-2 text-slate-400" disabled>Next</button>
+                <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-400" disabled>Next</button>
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </AppShell>

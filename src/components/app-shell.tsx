@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { LogoutButton } from "./logout-button";
 
-type IconName = "grid" | "users" | "file" | "settings" | "help" | "moon" | "chevron";
+type IconName = "grid" | "users" | "file" | "settings" | "help" | "moon" | "chevron" | "bell";
 
 type NavigationItem = {
   href: string;
@@ -67,6 +67,10 @@ function NavIcon({ name, active = false }: { name: IconName; active?: boolean })
     return <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true"><path {...common} d="M20 15.2A8.5 8.5 0 0 1 8.8 4a8.5 8.5 0 1 0 11.2 11.2Z" /></svg>;
   }
 
+  if (name === "bell") {
+    return <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true"><path {...common} d="M6 10.5a6 6 0 0 1 12 0c0 3.4.8 5 1.6 5.9.3.3.1.9-.4.9H4.8c-.5 0-.7-.6-.4-.9.8-.9 1.6-2.5 1.6-5.9Z" /><path {...common} d="M10 19.5a2 2 0 0 0 4 0" /></svg>;
+  }
+
   return <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true"><path {...common} d="m8 10 4 4 4-4" /></svg>;
 }
 
@@ -81,7 +85,15 @@ export function AppShell({
 }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [greeting, setGreeting] = useState("Welcome back");
   const pathname = usePathname();
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening");
+  }, []);
 
   function isActivePath(href: string) {
     return pathname === href || pathname?.startsWith(`${href}/`);
@@ -105,6 +117,7 @@ export function AppShell({
       : "Staff";
 
   const nameDisplay = userName || userEmail || "User";
+  const firstName = userName ? userName.split(" ")[0] : nameDisplay.split("@")[0];
 
   const showAdminMenu = userRole && ["admin", "super_admin"].includes(userRole);
 
@@ -256,8 +269,69 @@ export function AppShell({
 
                <section className="min-w-0 flex-1 flex flex-col h-full min-h-0">
           <header className="rounded-none border-b border-slate-200/80 bg-white/90 px-6 py-3 shadow-none shrink-0">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-slate-400">
+                  {greeting}, {firstName}
+                </p>
+                <h2 className="truncate text-sm font-semibold text-slate-900">{title}</h2>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-3">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotifOpen((value) => !value);
+                      setProfileOpen(false);
+                    }}
+                    className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                    aria-label="Notifications"
+                  >
+                    <NavIcon name="bell" />
+                    <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  </button>
+                  {notifOpen && (
+                    <div className="absolute right-0 top-11 z-20 w-72 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-lg">
+                      <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Notifications
+                      </p>
+                      <p className="rounded-lg px-2 py-6 text-center text-xs text-slate-400">You&apos;re all caught up.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="h-6 w-px bg-slate-200" />
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen((value) => !value);
+                      setNotifOpen(false);
+                    }}
+                    className="flex items-center gap-2.5 rounded-lg py-1 pl-1 pr-2 transition hover:bg-slate-50"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-[11px] font-bold text-white ring-2 ring-white shadow-sm">
+                      {initials}
+                    </span>
+                    <span className="hidden text-left sm:block">
+                      <p className="max-w-[140px] truncate text-[13px] font-semibold leading-tight text-slate-900">{nameDisplay}</p>
+                      <p className="text-[11px] leading-tight text-slate-500">{roleDisplay}</p>
+                    </span>
+                    <NavIcon name="chevron" />
+                  </button>
+                  {profileOpen && (
+                    <div className="absolute right-0 top-11 z-20 w-48 rounded-xl border border-slate-200 bg-white p-1.5 text-left text-sm shadow-lg">
+                      <p className="truncate px-3 pb-1 pt-1.5 text-xs text-slate-400">{userEmail}</p>
+                      <Link href="/settings" className="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50">
+                        Settings
+                      </Link>
+                      <LogoutButton className="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-slate-600 transition hover:bg-red-50 hover:text-red-600" />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </header>
           <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>

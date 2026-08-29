@@ -61,7 +61,7 @@ export function ExportStudentsButton({ gradeLevels, schoolYears, statuses }: Pro
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-9 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+        className="h-8 inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
       >
         <span aria-hidden="true">⭳</span>
         Export to Excel

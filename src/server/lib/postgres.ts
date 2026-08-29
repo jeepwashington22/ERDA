@@ -17,6 +17,7 @@ function getPostgresPool(): Pool {
     globalThis.__erdaScholarPostgresPool = new Pool({
       connectionString: backendConfig.supabasePoolUrl,
       max: 10,
+      connectionTimeoutMillis: 60000, // 60 seconds
     });
   }
 

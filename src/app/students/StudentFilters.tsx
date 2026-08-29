@@ -64,7 +64,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
   }, []);
 
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2.5">
       <label className="relative block min-w-0 flex-1 lg:max-w-sm">
         <span className="sr-only">Search students</span>
         <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">⌕</span>
@@ -72,7 +72,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
           type="text"
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           placeholder="Search by name or child code"
         />
       </label>
@@ -80,7 +80,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
       <select
         value={currentGrade}
         onChange={(e) => updateFilters({ grade: e.target.value })}
-        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
       >
         <option value="">All grades</option>
         {gradeLevels.map((g) => (
@@ -91,7 +91,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
       <select
         value={currentYear}
         onChange={(e) => updateFilters({ year: e.target.value })}
-        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
       >
         <option value="">All school years</option>
         {schoolYears.map((y) => (
@@ -102,7 +102,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
       <select
         value={currentStatus}
         onChange={(e) => updateFilters({ status: e.target.value })}
-        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
       >
         <option value="">All statuses</option>
         {statuses.map((s) => (
@@ -114,11 +114,11 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
         <button
           type="button"
           onClick={() => updateFilters({ search: "", grade: "", year: "", status: "" })}
-          className="h-9 flex items-center rounded-lg px-3 text-xs font-semibold text-slate-400 transition hover:text-slate-600"
+          className="h-8 flex items-center rounded-lg px-3 text-xs font-semibold text-slate-400 transition hover:text-slate-600"
         >
           Clear filters
         </button>
       )}
     </div>
   );
-}     
+}

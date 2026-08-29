@@ -7,6 +7,8 @@ type Props = {
   schoolYearOptions: string[];
 };
 
+// Compact, inline version meant to live inside the dashboard top bar
+// (previously a full-width card — now just two small selects).
 export function DashboardFilters({ provinceOptions, schoolYearOptions }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,16 +22,15 @@ export function DashboardFilters({ provinceOptions, schoolYearOptions }: Props) 
   }
 
   const selectClass =
-    "h-10 rounded-xl border border-emerald-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15";
+    "h-8 rounded-lg border border-emerald-200 bg-white pl-2.5 pr-7 text-xs font-medium text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15";
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-5 py-4 shadow-sm">
-      <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Filter</span>
-
+    <div className="flex items-center gap-2">
       <select
         className={selectClass}
         defaultValue={searchParams.get("provinceId") ?? ""}
         onChange={(e) => updateParam("provinceId", e.target.value)}
+        aria-label="Filter by province"
       >
         <option value="">All provinces</option>
         {provinceOptions.map((p) => (
@@ -41,6 +42,7 @@ export function DashboardFilters({ provinceOptions, schoolYearOptions }: Props) 
         className={selectClass}
         defaultValue={searchParams.get("schoolYear") ?? ""}
         onChange={(e) => updateParam("schoolYear", e.target.value)}
+        aria-label="Filter by school year"
       >
         <option value="">All school years</option>
         {schoolYearOptions.map((y) => (

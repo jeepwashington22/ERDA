@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AppShell } from "@/components/app-shell";
 import { getDashboardSummary } from "@/server";
 import { redirect } from "next/navigation";
-import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
+import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import {
   StudentsByProvinceChart,
   ProvinceShareChart,
@@ -19,29 +19,15 @@ type ChartViewportProps = {
 
 function ChartViewport({ children, minWidth = "min-w-[600px]" }: ChartViewportProps) {
   return (
-    <div className="-mx-1 overflow-x-auto px-1 pb-1.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/40">
+    <div className="-mx-1 overflow-x-auto px-1 pb-1.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-emerald-200">
       <div className={`${minWidth} h-[200px]`}>{children}</div>
     </div>
   );
 }
 
-type Accent = "emerald" | "sky" | "violet" | "amber";
-
-// Solid tinted card backgrounds, like the reference — not just accent lines.
-const ACCENTS: Record<Accent, { card: string; iconBg: string; iconText: string; text: string; subtext: string }> = {
-  sky: { card: "bg-sky-600", iconBg: "bg-white/20", iconText: "text-white", text: "text-white", subtext: "text-sky-100" },
-  violet: { card: "bg-violet-600", iconBg: "bg-white/20", iconText: "text-white", text: "text-white", subtext: "text-violet-100" },
-  amber: { card: "bg-amber-500", iconBg: "bg-white/20", iconText: "text-white", text: "text-white", subtext: "text-amber-50" },
-  emerald: { card: "bg-emerald-600", iconBg: "bg-white/20", iconText: "text-white", text: "text-white", subtext: "text-emerald-100" },
-};
-
-// Soft tints for chart cards — full-strength color would fight with the charts drawn inside them.
-const CHART_ACCENTS: Record<Accent, { card: string; border: string; title: string; desc: string; dot: string }> = {
-  sky: { card: "bg-sky-50/60", border: "border-sky-100", title: "text-sky-900", desc: "text-sky-600/70", dot: "bg-sky-500" },
-  violet: { card: "bg-violet-50/60", border: "border-violet-100", title: "text-violet-900", desc: "text-violet-600/70", dot: "bg-violet-500" },
-  amber: { card: "bg-amber-50/60", border: "border-amber-100", title: "text-amber-900", desc: "text-amber-700/70", dot: "bg-amber-500" },
-  emerald: { card: "bg-emerald-50/60", border: "border-emerald-100", title: "text-emerald-900", desc: "text-emerald-700/70", dot: "bg-emerald-500" },
-};
+// Single green family, just varying intensity for visual hierarchy —
+// solid emerald-600 for the primary stat, softer emerald-50 tints for the rest.
+type Weight = "solid" | "soft";
 
 function StatIcon({ name, className }: { name: "users" | "file" | "map" | "badge"; className?: string }) {
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -73,43 +59,48 @@ export default async function DashboardPage({
     label: string,
     value: string | number,
     icon: "users" | "file" | "map" | "badge",
-    accent: Accent,
+    weight: Weight,
   ) => {
-    const a = ACCENTS[accent];
+    const solid = weight === "solid";
     return (
-      <div className={`flex min-h-[92px] flex-col justify-between rounded-xl ${a.card} px-4 py-3.5 shadow-md shadow-black/[0.06]`}>
+      <div
+        className={`flex min-h-[92px] flex-col justify-between rounded-xl px-4 py-3.5 shadow-sm ${
+          solid
+            ? "bg-emerald-600 shadow-emerald-900/10"
+            : "border border-emerald-100 bg-emerald-50/70 shadow-emerald-950/[0.02]"
+        }`}
+      >
         <div className="flex items-center justify-between">
-          <p className={`text-[11px] font-medium uppercase tracking-[0.06em] ${a.subtext}`}>{label}</p>
-          <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${a.iconBg} ${a.iconText}`}>
+          <p className={`text-[11px] font-medium uppercase tracking-[0.06em] ${solid ? "text-emerald-100" : "text-emerald-700/70"}`}>
+            {label}
+          </p>
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+              solid ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-600"
+            }`}
+          >
             <StatIcon name={icon} className="h-3.5 w-3.5" />
           </span>
         </div>
-        <p className={`mt-1 text-xl font-semibold tracking-tight ${a.text} sm:text-2xl`}>{value}</p>
+        <p className={`mt-1 text-xl font-semibold tracking-tight sm:text-2xl ${solid ? "text-white" : "text-emerald-950"}`}>
+          {value}
+        </p>
       </div>
     );
   };
 
-  const chartCard = (
-    title: string,
-    description: string,
-    children: React.ReactNode,
-    accent: Accent,
-    className = "",
-  ) => {
-    const a = CHART_ACCENTS[accent];
-    return (
-      <section className={`rounded-xl border ${a.border} ${a.card} p-4 shadow-sm shadow-emerald-950/[0.03] sm:p-5 ${className}`}>
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="min-h-[34px]">
-            <h3 className={`text-[13px] font-semibold ${a.title}`}>{title}</h3>
-            <p className={`mt-0.5 text-[11px] leading-4 ${a.desc}`}>{description}</p>
-          </div>
-          <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${a.dot}`} aria-hidden="true" />
+  const chartCard = (title: string, description: string, children: React.ReactNode, className = "") => (
+    <section className={`rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm shadow-slate-900/[0.03] sm:p-5 ${className}`}>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-h-[34px]">
+          <h3 className="text-[13px] font-semibold text-slate-900">{title}</h3>
+          <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{description}</p>
         </div>
-        {children}
-      </section>
-    );
-  };
+        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+      </div>
+      {children}
+    </section>
+  );
 
   return (
     <AppShell
@@ -125,16 +116,19 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div className="space-y-5 p-4 sm:p-6">
-          <DashboardFilters
+          <DashboardTopbar
+            userName={summary.currentUserProfile?.fullName ?? authData.user.email ?? "Unknown user"}
+            userRole={summary.currentUserProfile?.role ?? "staff"}
+            userEmail={authData.user.email}
             provinceOptions={summary.provinceOptions}
             schoolYearOptions={summary.schoolYearOptions}
           />
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {statCard("Students", summary.totalStudents, "users", "sky")}
-            {statCard("Grade submissions", summary.totalGradeSubmissions, "file", "violet")}
-            {statCard("Provinces covered", summary.totalProvincesCovered, "map", "amber")}
-            {statCard("Role", summary.currentUserProfile?.role ?? "staff", "badge", "emerald")}
+            {statCard("Students", summary.totalStudents, "users", "solid")}
+            {statCard("Grade submissions", summary.totalGradeSubmissions, "file", "soft")}
+            {statCard("Provinces covered", summary.totalProvincesCovered, "map", "soft")}
+            {statCard("Role", summary.currentUserProfile?.role ?? "staff", "badge", "soft")}
           </div>
 
           <div className="grid items-stretch gap-5 xl:grid-cols-3">
@@ -144,7 +138,6 @@ export default async function DashboardPage({
               <ChartViewport>
                 <StudentsByProvinceChart data={summary.studentsByProvince} />
               </ChartViewport>,
-              "sky",
               "xl:col-span-2",
             )}
             {chartCard(
@@ -153,7 +146,6 @@ export default async function DashboardPage({
               <div className="flex h-[200px] items-center justify-center">
                 <ProvinceShareChart data={summary.studentsByProvince} />
               </div>,
-              "violet",
             )}
           </div>
 
@@ -164,7 +156,6 @@ export default async function DashboardPage({
               <ChartViewport minWidth="min-w-[660px]">
                 <ProvinceYearTrendChart data={summary.provinceYearTrend} />
               </ChartViewport>,
-              "emerald",
               "xl:col-span-2",
             )}
             {chartCard(
@@ -173,16 +164,15 @@ export default async function DashboardPage({
               <div className="h-[200px] overflow-y-auto pr-1">
                 <CoverageList data={summary.provinceCoverage} />
               </div>,
-              "amber",
             )}
           </div>
 
           {chartCard(
             "Recent grade submissions",
             "Latest student performance records",
-            <div className="overflow-x-auto rounded-lg border border-white bg-white">
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
               <table className="min-w-[680px] divide-y divide-slate-100 text-[13px]">
-                <thead className="bg-slate-50/80 text-left text-slate-500">
+                <thead className="bg-slate-100/80 text-left text-slate-500">
                   <tr>
                     <th className="whitespace-nowrap px-3.5 py-2.5 font-medium">Student</th>
                     <th className="whitespace-nowrap px-3.5 py-2.5 font-medium">School year</th>
@@ -193,7 +183,7 @@ export default async function DashboardPage({
                 </thead>
                 <tbody className="divide-y divide-slate-50 bg-white">
                   {summary.recentSubmissions.map((s) => (
-                    <tr key={s.enrollmentRecordId} className="transition-colors hover:bg-sky-50/40">
+                    <tr key={s.enrollmentRecordId} className="transition-colors hover:bg-emerald-50/40">
                       <td className="px-3.5 py-2.5">
                         <div className="font-medium text-slate-900">{s.studentName}</div>
                         <div className="text-[11px] text-slate-500">{s.childCode}</div>
@@ -207,7 +197,6 @@ export default async function DashboardPage({
                 </tbody>
               </table>
             </div>,
-            "sky",
           )}
         </div>
       )}
