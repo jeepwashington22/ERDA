@@ -83,6 +83,10 @@ const BASE_FROM = `
     select er.*
     from enrollment_records er
     where er.student_id = s.id
+      -- YEAR-AWARE MONITORING: when a school-year filter is active, join THAT
+      -- year's enrollment snapshot instead of only the latest one. Without a
+      -- year filter this falls back to the student's most recent record.
+      and ($3::text is null or er.school_year = $3)
     order by er.school_year desc
     limit 1
   ) er on true

@@ -84,6 +84,11 @@ const SUPABASE_SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY");
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
+// Optional: import only a single school year, e.g. --year=2025-2026
+const ONLY_YEAR = process.argv
+  .find((a) => a.startsWith("--year="))
+  ?.split("=")[1];
+
 if (!DRY_RUN && (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)) {
   console.error(
     "Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY. Add them to .env.local, or use --dry-run.",
@@ -424,8 +429,8 @@ class LookupCache {
       const column = table === "lookup_income_brackets" ? "label" : "name";
       const { data, error } = await this.client.from(table).select(`id,${column}`);
       if (error) throw new Error(`Failed to preload ${table}: ${error.message}`);
-      for (const row of data ?? []) {
-        this.cache.set(this.key(table, row[column]), row.id as string);
+      for (const row of (data ?? []) as Record<string, unknown>[]) {
+        this.cache.set(this.key(table, String(row[column] ?? "")), row.id as string);
       }
       console.log(`  cached ${data?.length ?? 0} rows from ${table}`);
     }
@@ -1215,6 +1220,28 @@ async function replaceAssistance(
 // 9. WORKBOOK PROCESSING — two-phase: TRANSFORM all rows, then bulk LOAD
 // ----------------------------------------------------------------------------
 
+/**
+ * Some workbooks (e.g. SY 2025-26) have ghost formatting that extends the
+ * used range to ~15,000 columns (A1:XEN9967). Parsing that many empty cells
+ * is extremely slow, so we shrink the range to the real header width before
+ * converting the sheet to rows. Mutates the sheet's !ref in place.
+ */
+function trimSheetRange(sheet: XLSX.WorkSheet): void {
+  const ref = sheet["!ref"];
+  if (!ref) return;
+  const decoded = XLSX.utils.decode_range(ref);
+  // Walk the header row (first row) and find the last column with content.
+  let lastCol = decoded.s.c;
+  for (let c = decoded.s.c; c <= decoded.e.c; c++) {
+    const cell = sheet[XLSX.utils.encode_cell({ r: decoded.s.r, c })];
+    if (cell && cell.v !== null && cell.v !== undefined && String(cell.v).trim() !== "") {
+      lastCol = c;
+    }
+  }
+  decoded.e.c = lastCol;
+  sheet["!ref"] = XLSX.utils.encode_range(decoded);
+}
+
 /** Picks the sheet whose first row looks like the data table (has "Child Code"). */
 function chooseDataSheet(workbook: XLSX.WorkBook): string {
   let bestSheet = workbook.SheetNames[0];
@@ -1222,6 +1249,7 @@ function chooseDataSheet(workbook: XLSX.WorkBook): string {
   for (const name of workbook.SheetNames) {
     if (/^(reference|pivot)$/i.test(name.trim())) continue;
     const sheet = workbook.Sheets[name];
+    trimSheetRange(sheet);
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: null });
     const firstRow: unknown[] = rows[0] ?? [];
     let score = firstRow.filter((v: unknown) => nonEmpty(v)).length;
@@ -1239,6 +1267,10 @@ function chooseDataSheet(workbook: XLSX.WorkBook): string {
 async function processWorkbook(filePath: string, lookups: LookupCache): Promise<void> {
   const filename = filePath.split(/[\\/]/).pop() ?? filePath;
   const schoolYear = inferSchoolYear(filename); // "SY 2017-18.xlsx" → "2017-2018"
+  if (ONLY_YEAR && schoolYear !== ONLY_YEAR) {
+    console.log(`\n▶ ${filename}  [${schoolYear}] — skipped (--year=${ONLY_YEAR})`);
+    return;
+  }
   console.log(`\n▶ ${filename}  [${schoolYear}]`);
 
   const workbook = XLSX.read(readFileSync(filePath), { type: "buffer", cellDates: true });
