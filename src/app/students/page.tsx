@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { queryPostgres } from "@/server/lib/postgres";
 import {
   getStudentRegistryRows,
   getStudentFilterOptions,
@@ -100,11 +101,16 @@ export default async function StudentsPage({
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("full_name, role")
-    .eq("id", data.user.id)
-    .single();
+  let profile: { full_name: string | null; role: string } | null = null;
+  try {
+    const profileRows = await queryPostgres<{ full_name: string | null; role: string }>(
+      "select full_name, role from user_profiles where id = $1 limit 1",
+      [data.user.id],
+    );
+    profile = profileRows[0] ?? null;
+  } catch {
+    profile = null;
+  }
 
   const params = await searchParams;
   const filters = { search: params.search, grade: params.grade, year: params.year, status: params.status };
@@ -250,4 +256,4 @@ export default async function StudentsPage({
       </div>
     </AppShell>
   );
-}
+} 
