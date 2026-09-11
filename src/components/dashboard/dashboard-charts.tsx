@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect, useMemo, memo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   PieChart, Pie, Cell, Legend,
@@ -9,7 +10,7 @@ import type { ProvinceStudentCount, ProvinceYearTrendPoint, ProvinceCoverage } f
 
 const GREEN = ["#059669", "#10B981", "#34D399", "#6EE7B7", "#A7F3D0", "#D1FAE5"];
 
-export function StudentsByProvinceChart({ data }: { data: ProvinceStudentCount[] }) {
+export const StudentsByProvinceChart = memo(function StudentsByProvinceChart({ data }: { data: ProvinceStudentCount[] }) {
   const top = data.slice(0, 8);
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -22,9 +23,9 @@ export function StudentsByProvinceChart({ data }: { data: ProvinceStudentCount[]
       </BarChart>
     </ResponsiveContainer>
   );
-}
+});
 
-export function ProvinceShareChart({ data }: { data: ProvinceStudentCount[] }) {
+export const ProvinceShareChart = memo(function ProvinceShareChart({ data }: { data: ProvinceStudentCount[] }) {
   const top = data.slice(0, 6);
   const rest = data.slice(6).reduce((sum, d) => sum + d.studentCount, 0);
   const chartData = rest > 0 ? [...top, { provinceName: "Others", studentCount: rest }] : top;
@@ -49,20 +50,39 @@ export function ProvinceShareChart({ data }: { data: ProvinceStudentCount[] }) {
       </PieChart>
     </ResponsiveContainer>
   );
-}
+});
 
-export function ProvinceYearTrendChart({ data }: { data: ProvinceYearTrendPoint[] }) {
-  // pivot: one row per year, one column per province
-  const years = Array.from(new Set(data.map((d) => d.schoolYear))).sort();
-  const provinces = Array.from(new Set(data.map((d) => d.provinceName))).slice(0, 5);
-
-  const pivoted = years.map((year) => {
-    const row: Record<string, string | number> = { schoolYear: year };
-    provinces.forEach((p) => {
-      row[p] = data.find((d) => d.schoolYear === year && d.provinceName === p)?.studentCount ?? 0;
+export const ProvinceYearTrendChart = memo(function ProvinceYearTrendChart({ data }: { data: ProvinceYearTrendPoint[] }) {
+  // Optimized: Build lookup map instead of O(n²) find() in loop
+  const lookup = useMemo(() => {
+    const map = new Map<string, number>();
+    data.forEach((d) => {
+      map.set(`${d.schoolYear}:${d.provinceName}`, d.studentCount);
     });
-    return row;
-  });
+    return map;
+  }, [data]);
+
+  const years = useMemo(() => {
+    const uniqueYears = new Set<string>();
+    data.forEach((d) => uniqueYears.add(d.schoolYear));
+    return Array.from(uniqueYears).sort();
+  }, [data]);
+
+  const provinces = useMemo(() => {
+    const uniqueProvinces = new Set<string>();
+    data.forEach((d) => uniqueProvinces.add(d.provinceName));
+    return Array.from(uniqueProvinces).slice(0, 5);
+  }, [data]);
+
+  const pivoted = useMemo(() => {
+    return years.map((year) => {
+      const row: Record<string, string | number> = { schoolYear: year };
+      provinces.forEach((p) => {
+        row[p] = lookup.get(`${year}:${p}`) ?? 0;
+      });
+      return row;
+    });
+  }, [years, provinces, lookup]);
 
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -78,10 +98,13 @@ export function ProvinceYearTrendChart({ data }: { data: ProvinceYearTrendPoint[
       </LineChart>
     </ResponsiveContainer>
   );
-}
+});
 
-export function CoverageList({ data }: { data: ProvinceCoverage[] }) {
-  const sorted = [...data].sort((a, b) => a.coveragePercent - b.coveragePercent).slice(0, 8);
+export const CoverageList = memo(function CoverageList({ data }: { data: ProvinceCoverage[] }) {
+  const sorted = useMemo(() => {
+    return [...data].sort((a, b) => a.coveragePercent - b.coveragePercent).slice(0, 8);
+  }, [data]);
+
   return (
     <div className="space-y-3">
       {sorted.map((p) => (
@@ -102,4 +125,4 @@ export function CoverageList({ data }: { data: ProvinceCoverage[] }) {
       ))}
     </div>
   );
-}
+});
