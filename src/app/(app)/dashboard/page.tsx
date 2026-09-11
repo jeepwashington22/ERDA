@@ -1,7 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { AppShell } from "@/components/app-shell";
+﻿import { requireCurrentUser } from "@/lib/current-user";
 import { getDashboardSummary } from "@/server";
-import { redirect } from "next/navigation";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import {
   StudentsByProvinceChart,
@@ -25,7 +23,7 @@ function ChartViewport({ children, minWidth = "min-w-[600px]" }: ChartViewportPr
   );
 }
 
-// Single green family, just varying intensity for visual hierarchy —
+// Single green family, just varying intensity for visual hierarchy -
 // solid emerald-600 for the primary stat, softer emerald-50 tints for the rest.
 type Weight = "solid" | "soft";
 
@@ -48,12 +46,12 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ provinceId?: string; schoolYear?: string }>;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData.user) redirect("/login");
+  // Auth + shell come from the shared (app) layout. While getDashboardSummary
+  // runs, the segment loading.tsx shows a centered dashboard skeleton.
+  const user = await requireCurrentUser();
 
   const { provinceId, schoolYear } = await searchParams;
-  const summary = await getDashboardSummary(authData.user.id, { provinceId, schoolYear });
+  const summary = await getDashboardSummary(user.id, { provinceId, schoolYear });
 
   const statCard = (
     label: string,
@@ -103,13 +101,7 @@ export default async function DashboardPage({
   );
 
   return (
-    <AppShell
-      title="Dashboard"
-      description={`${summary.currentUserProfile?.fullName ?? authData.user.email ?? "Unknown user"} is signed in as ${summary.currentUserProfile?.role ?? "unknown role"}.`}
-      userRole={summary.currentUserProfile?.role}
-      userName={summary.currentUserProfile?.fullName ?? undefined}
-      userEmail={authData.user.email}
-    >
+    <>
       {summary.databaseUnavailable ? (
         <div className="m-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
           Dashboard database connection is not configured yet. Set SUPABASE_POOL_URL to enable live counts.
@@ -117,9 +109,9 @@ export default async function DashboardPage({
       ) : (
         <div className="space-y-5 p-4 sm:p-6">
           <DashboardTopbar
-            userName={summary.currentUserProfile?.fullName ?? authData.user.email ?? "Unknown user"}
+            userName={summary.currentUserProfile?.fullName ?? user.email ?? "Unknown user"}
             userRole={summary.currentUserProfile?.role ?? "staff"}
-            userEmail={authData.user.email}
+            userEmail={user.email}
             provinceOptions={summary.provinceOptions}
             schoolYearOptions={summary.schoolYearOptions}
           />
@@ -190,8 +182,8 @@ export default async function DashboardPage({
                       </td>
                       <td className="px-3.5 py-2.5 text-slate-700">{s.schoolYear}</td>
                       <td className="px-3.5 py-2.5 text-slate-700">{s.gradeLevel ?? "Unknown"}</td>
-                      <td className="px-3.5 py-2.5 text-slate-700">{s.generalAverage ?? "—"}</td>
-                      <td className="px-3.5 py-2.5 text-slate-700">{s.mathGrade1stPeriod ?? "—"}</td>
+                      <td className="px-3.5 py-2.5 text-slate-700">{s.generalAverage ?? "-"}</td>
+                      <td className="px-3.5 py-2.5 text-slate-700">{s.mathGrade1stPeriod ?? "-"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -200,6 +192,6 @@ export default async function DashboardPage({
           )}
         </div>
       )}
-    </AppShell>
+    </>
   );
 }

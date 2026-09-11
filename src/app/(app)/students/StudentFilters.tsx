@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type StudentFiltersProps = {
   gradeLevels: string[];
@@ -12,7 +12,6 @@ type StudentFiltersProps = {
 export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
 
   const [searchValue, setSearchValue] = useState(searchParams.get("search") ?? "");
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -38,9 +37,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
     }
     params.delete("page");
 
-    startTransition(() => {
-      router.push(`/students?${params.toString()}`);
-    });
+    router.push(`/students?${params.toString()}`);
   }
 
   // Debounce the free-text search so it doesn't navigate on every keystroke.
@@ -67,7 +64,7 @@ export function StudentFilters({ gradeLevels, schoolYears, statuses }: StudentFi
     <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2.5">
       <label className="relative block min-w-0 flex-1 lg:max-w-sm">
         <span className="sr-only">Search students</span>
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">⌕</span>
+        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">âŒ•</span>
         <input
           type="text"
           value={searchValue}

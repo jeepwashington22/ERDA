@@ -249,8 +249,8 @@ export async function getDashboardSummary(
     databaseUnavailable: false,
   };
 
-  // Cache the result for 60 seconds (1 minute)
-  await redisCache.set(cacheKey, result, 60);
+  // Cache the result for 5 minutes (increased from 60 seconds)
+  await redisCache.set(cacheKey, result, 300);
 
   return result;
 }

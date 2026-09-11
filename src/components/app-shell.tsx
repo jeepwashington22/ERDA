@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -30,8 +30,8 @@ const navigationGroups: { title: string; items: NavigationItem[] }[] = [
 ];
 
 type AppShellProps = {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   children: ReactNode;
   eyebrow?: string;
   userRole?: string;
@@ -88,7 +88,16 @@ export function AppShell({
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [greeting, setGreeting] = useState("Welcome back");
-  const pathname = usePathname();
+    const pathname = usePathname();
+
+  // The shared (app) layout does not pass a title, so derive it from the
+  // active segment to keep the header accurate on every tab.
+  const derivedTitle = pathname?.startsWith("/admin/accounts")
+    ? "Account management"
+    : pathname?.startsWith("/students")
+      ? "Students"
+      : "Dashboard";
+  const headerTitle = title ?? derivedTitle;
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -148,7 +157,7 @@ export function AppShell({
               className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-50 hover:text-slate-700 xl:flex"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              <span className={`text-[10px] transition-transform ${collapsed ? "rotate-180" : ""}`}>«</span>
+              <span className={`text-[10px] transition-transform ${collapsed ? "rotate-180" : ""}`}>Â«</span>
             </button>
           </div>
 
@@ -274,7 +283,7 @@ export function AppShell({
                 <p className="text-[11px] font-medium text-slate-400">
                   {greeting}, {firstName}
                 </p>
-                <h2 className="truncate text-sm font-semibold text-slate-900">{title}</h2>
+                <h2 className="truncate text-sm font-semibold text-slate-900">{headerTitle}</h2>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
