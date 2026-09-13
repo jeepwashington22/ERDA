@@ -282,7 +282,114 @@ export async function getStudentFilterOptions() {
     statuses: statusRows.map((r) => r.education_status),
   };
 }
+// ============================================================================
+// EDIT SUPPORT — fetch one student's editable fields + lookup options
+// ============================================================================
 
+export type StudentEditRow = {
+  id: string;
+  childCode: string;
+  surname: string;
+  firstName: string;
+  middleInitial: string | null;
+  sex: string | null;
+  dateOfBirth: string | null;
+  province: string | null;
+  city: string | null;
+  barangay: string | null;
+  sitioPhase: string | null;
+  completeAddress: string | null;
+  // latest enrollment fields
+  schoolName: string | null;
+  courseInCollege: string | null;
+  educationStatus: string | null;
+  locationForReporting: string | null;
+  remarks: string | null;
+  latestSchoolYear: string | null;
+};
+
+/** Loads the editable subset of a student's permanent identity + latest enrollment. */
+export async function getStudentForEdit(studentId: string): Promise<StudentEditRow | null> {
+  const rows = await queryPostgres<any>(
+    `select
+       s.id,
+       s.child_code,
+       s.surname,
+       s.first_name,
+       s.middle_initial,
+       s.sex,
+       s.date_of_birth::text as date_of_birth,
+       lp.name as province,
+       lc.name as city,
+       s.barangay,
+       s.sitio_phase,
+       s.complete_address,
+       er.school_name,
+       er.course_in_college,
+       er.education_status,
+       er.location_for_reporting,
+       er.remarks,
+       er.school_year as latest_school_year
+     from students s
+     left join lookup_provinces lp on lp.id = s.province_id
+     left join lookup_cities lc on lc.id = s.city_id
+     left join lateral (
+       select er.*
+       from enrollment_records er
+       where er.student_id = s.id
+       order by er.school_year desc
+       limit 1
+     ) er on true
+     where s.id = $1
+     limit 1`,
+    [studentId],
+  );
+
+  const r = rows[0];
+  if (!r) return null;
+
+  return {
+    id: r.id,
+    childCode: r.child_code,
+    surname: r.surname,
+    firstName: r.first_name,
+    middleInitial: r.middle_initial,
+    sex: r.sex,
+    dateOfBirth: r.date_of_birth,
+    province: r.province,
+    city: r.city,
+    barangay: r.barangay,
+    sitioPhase: r.sitio_phase,
+    completeAddress: r.complete_address,
+    schoolName: r.school_name,
+    courseInCollege: r.course_in_college,
+    educationStatus: r.education_status,
+    locationForReporting: r.location_for_reporting,
+    remarks: r.remarks,
+    latestSchoolYear: r.latest_school_year,
+  };
+}
+
+/** Province + city lists for the address dropdowns on the edit form. */
+export async function getLocationOptions() {
+  const [provinceRows, cityRows] = await Promise.all([
+    queryPostgres<{ name: string }>("select name from lookup_provinces order by name asc"),
+    queryPostgres<{ province: string; name: string }>(
+      `select lp.name as province, lc.name as name
+       from lookup_cities lc
+       join lookup_provinces lp on lp.id = lc.province_id
+       order by lp.name asc, lc.name asc`,
+    ),
+  ]);
+
+  return {
+    provinces: provinceRows.map((r) => r.name),
+    citiesByProvince: cityRows.reduce<Record<string, string[]>>((acc, r) => {
+      (acc[r.province] ??= []).push(r.name);
+      return acc;
+    }, {}),
+  };
+}
 
 export async function getStudentsForExport(
   filters: StudentRegistryFilters,

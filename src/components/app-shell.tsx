@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { LogoutButton } from "./logout-button";
+import { EditInfoDialog } from "@/components/edit-info-dialog";
 
 type IconName = "grid" | "users" | "file" | "settings" | "help" | "moon" | "chevron" | "bell";
 
@@ -20,7 +21,8 @@ const navigationGroups: { title: string; items: NavigationItem[] }[] = [
     title: "Main menu",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "grid" },
-      { href: "/students", label: "Students", icon: "users", badge: "250" },
+      { href: "/students", label: "Students", icon: "users" },
+      { href: "/profile", label: "My Profile", icon: "settings" },
     ],
   },
   {
@@ -333,9 +335,13 @@ export function AppShell({
                   {profileOpen && (
                     <div className="absolute right-0 top-11 z-20 w-48 rounded-xl border border-slate-200 bg-white p-1.5 text-left text-sm shadow-lg">
                       <p className="truncate px-3 pb-1 pt-1.5 text-xs text-slate-400">{userEmail}</p>
-                      <Link href="/settings" className="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50">
-                        Settings
+                      <Link href="/profile" className="block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50">
+                        My profile
                       </Link>
+                      <EditInfoDialog
+                        currentFullName={userName ?? ""}
+                        triggerClassName="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-slate-600 transition hover:bg-slate-50"
+                      />
                       <LogoutButton className="w-full rounded-lg border-0 bg-transparent px-3 py-2 text-left text-slate-600 transition hover:bg-red-50 hover:text-red-600" />
                     </div>
                   )}

@@ -1,6 +1,6 @@
-﻿import { requireCurrentUser } from "@/lib/current-user";
+import { requireCurrentUser } from "@/lib/current-user";
 import { getDashboardSummary } from "@/server";
-import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
+import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import {
   StudentsByProvinceChart,
   ProvinceShareChart,
@@ -18,7 +18,7 @@ type ChartViewportProps = {
 function ChartViewport({ children, minWidth = "min-w-[600px]" }: ChartViewportProps) {
   return (
     <div className="-mx-1 overflow-x-auto px-1 pb-1.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-emerald-200">
-      <div className={`${minWidth} h-[200px]`}>{children}</div>
+      <div className={`${minWidth} h-[260px]`}>{children}</div>
     </div>
   );
 }
@@ -39,6 +39,11 @@ function StatIcon({ name, className }: { name: "users" | "file" | "map" | "badge
     return <svg viewBox="0 0 24 24" className={className} aria-hidden="true"><path {...common} d="M9 4.5 4 6.5v13l5-2 6 2 5-2v-13l-5 2-6-2Z" /><path {...common} d="M9 4.5v13M15 6.5v13" /></svg>;
   }
   return <svg viewBox="0 0 24 24" className={className} aria-hidden="true"><path {...common} d="M12 3.5 4.5 7v6c0 4 3.2 6.8 7.5 8 4.3-1.2 7.5-4 7.5-8V7L12 3.5Z" /><path {...common} d="m9.3 12 1.8 1.8 3.6-3.6" /></svg>;
+}
+
+function roleText(role: string) {
+  if (role === "super_admin") return "Super Admin";
+  return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
 export default async function DashboardPage({
@@ -62,39 +67,44 @@ export default async function DashboardPage({
     const solid = weight === "solid";
     return (
       <div
-        className={`flex min-h-[92px] flex-col justify-between rounded-xl px-4 py-3.5 shadow-sm ${
+        className={`group relative overflow-hidden rounded-2xl border p-5 transition-shadow duration-200 hover:shadow-md ${
           solid
-            ? "bg-emerald-600 shadow-emerald-900/10"
-            : "border border-emerald-100 bg-emerald-50/70 shadow-emerald-950/[0.02]"
+            ? "border-emerald-600/60 bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-sm shadow-emerald-900/20"
+            : "border-slate-200 bg-white shadow-sm shadow-slate-900/[0.03]"
         }`}
       >
-        <div className="flex items-center justify-between">
-          <p className={`text-[11px] font-medium uppercase tracking-[0.06em] ${solid ? "text-emerald-100" : "text-emerald-700/70"}`}>
-            {label}
-          </p>
+        {solid ? (
+          <div aria-hidden className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
+        ) : null}
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${solid ? "text-emerald-50" : "text-slate-500"}`}>
+              {label}
+            </p>
+            <p className={`mt-2 truncate text-3xl font-bold tracking-tight ${solid ? "text-white" : "text-slate-900"}`}>
+              {value}
+            </p>
+          </div>
           <span
-            className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-              solid ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-600"
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${
+              solid ? "bg-white/15 text-white" : "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100"
             }`}
           >
-            <StatIcon name={icon} className="h-3.5 w-3.5" />
+            <StatIcon name={icon} className="h-5 w-5" />
           </span>
         </div>
-        <p className={`mt-1 text-xl font-semibold tracking-tight sm:text-2xl ${solid ? "text-white" : "text-emerald-950"}`}>
-          {value}
-        </p>
       </div>
     );
   };
 
   const chartCard = (title: string, description: string, children: React.ReactNode, className = "") => (
-    <section className={`rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm shadow-slate-900/[0.03] sm:p-5 ${className}`}>
+    <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03] ${className}`}>
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-h-[34px]">
-          <h3 className="text-[13px] font-semibold text-slate-900">{title}</h3>
-          <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{description}</p>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+          <p className="mt-0.5 text-xs leading-4 text-slate-500">{description}</p>
         </div>
-        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500 ring-4 ring-emerald-100" aria-hidden="true" />
       </div>
       {children}
     </section>
@@ -108,19 +118,18 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div className="space-y-5 p-4 sm:p-6">
-          <DashboardTopbar
-            userName={summary.currentUserProfile?.fullName ?? user.email ?? "Unknown user"}
-            userRole={summary.currentUserProfile?.role ?? "staff"}
-            userEmail={user.email}
-            provinceOptions={summary.provinceOptions}
-            schoolYearOptions={summary.schoolYearOptions}
-          />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <DashboardFilters
+              provinceOptions={summary.provinceOptions}
+              schoolYearOptions={summary.schoolYearOptions}
+            />
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {statCard("Students", summary.totalStudents, "users", "solid")}
             {statCard("Grade submissions", summary.totalGradeSubmissions, "file", "soft")}
             {statCard("Provinces covered", summary.totalProvincesCovered, "map", "soft")}
-            {statCard("Role", summary.currentUserProfile?.role ?? "staff", "badge", "soft")}
+            {statCard("Role", roleText(summary.currentUserProfile?.role ?? "staff"), "badge", "soft")}
           </div>
 
           <div className="grid items-stretch gap-5 xl:grid-cols-3">
@@ -135,7 +144,7 @@ export default async function DashboardPage({
             {chartCard(
               "Province share",
               "% of total student population",
-              <div className="flex h-[200px] items-center justify-center">
+              <div className="relative h-[260px]">
                 <ProvinceShareChart data={summary.studentsByProvince} />
               </div>,
             )}
@@ -153,7 +162,7 @@ export default async function DashboardPage({
             {chartCard(
               "Data completeness",
               "Provinces lagging on grade submissions",
-              <div className="h-[200px] overflow-y-auto pr-1">
+              <div className="h-[240px] overflow-y-auto pr-1">
                 <CoverageList data={summary.provinceCoverage} />
               </div>,
             )}
